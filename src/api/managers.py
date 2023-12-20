@@ -12,6 +12,8 @@ class StreamgerManager(BaseUserManager): #BaseUserManager is a Django-provided b
         user.set_password(password)                    #used to securely set a user's password
         user.save(using=self.db)
 
+        return user
+
     def create_super_user(self,email,password,**extra_fields):
         extra_fields.setdefault('is_staff',True) 
         extra_fields.setdefault('is_superuser',True)  #Sets the 'is_superuser' key in extra_fields if this key is not already present in the extra_fields
