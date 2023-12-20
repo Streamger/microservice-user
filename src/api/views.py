@@ -52,6 +52,7 @@ class Register(APIView):
         except Exception as e:
             return Response({"error":str(e)})
         
+
     
 class Verify_Otp(APIView):
     permission_classes = [AllowAny]
@@ -82,3 +83,22 @@ class Verify_Otp(APIView):
             return Response({"success":True,"message":"User created successfully"})
         except Exception as e:
             return Response ({"error":str(e)})
+        
+
+class ForgetPassword(APIView):
+
+    permission_classes = [AllowAny]
+    forget_password_serializer = serializers.ForgetPasswordSerializer
+
+    def post(self,request):
+        try:
+            forget_data = self.forget_password_serializer(data=request.data)
+            forget_data.is_valid(raise_exception=True)
+            data = forget_data.validated_data
+
+            send_email(data.get('email'),"Password Reset OTP")
+
+            return Response({"success":True})
+        except Exception as e:
+            return Response ({"error":str(e)})
+

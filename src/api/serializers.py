@@ -50,7 +50,17 @@ class VerifyOTPSerializer(serializers.Serializer):
         if not Otp.objects.filter(user=user,otp=otp).exists():
             raise serializers.ValidationError("OTP didn't match")
         
+        return attrs
     
+
+class ForgetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+
+        if not (User.objects.filter(email=email).exists() and User.objects.get(email=email).is_verified):
+            raise serializers.ValidationError("Email does not exists")
         
         return attrs
 
