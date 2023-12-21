@@ -88,7 +88,7 @@ class Verify_Otp(APIView):
 class ForgetPassword(APIView):
 
     permission_classes = [AllowAny]
-    forget_password_serializer = serializers.ForgetPasswordSerializer
+    forget_password_serializer = serializers.ForgetPasswordRequestSerializer
 
     def post(self,request):
         try:
@@ -98,6 +98,38 @@ class ForgetPassword(APIView):
 
             send_email(data.get('email'),"Password Reset OTP")
 
+            return Response({"success":True})
+        except Exception as e:
+            return Response ({"error":str(e)})
+
+
+
+class ResetPassword(APIView):
+
+    permission_classes = [AllowAny]
+    reset_password_serializer = serializers.ResetPasswordSerializer
+
+    def post(self,request):
+        try:
+            reset_data = self.reset_password_serializer(data=request.data)
+            reset_data.is_valid(raise_exception=True)
+            data = reset_data.validated_data
+
+            user_instance = Users.objects.get(email=data.get('email'))
+            otp_instance = Otp.objects.get(user=user_instance)
+
+            otp_created_time = otp_instance.created_at
+            current_time = timezone.now()
+
+            if otp_created_time and (current_time - otp_created_time) > timedelta(minutes=5):
+                print(current_time,otp_created_time)
+                print(current_time - otp_created_time)
+                raise Exception ("OTP is expired")
+            
+            user_instance.set_password(data.get('password'))
+            user_instance.save()
+
+            print(data)
             return Response({"success":True})
         except Exception as e:
             return Response ({"error":str(e)})

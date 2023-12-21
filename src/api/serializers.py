@@ -53,7 +53,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         return attrs
     
 
-class ForgetPasswordSerializer(serializers.Serializer):
+class ForgetPasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate(self, attrs):
@@ -61,6 +61,30 @@ class ForgetPasswordSerializer(serializers.Serializer):
 
         if not (User.objects.filter(email=email).exists() and User.objects.get(email=email).is_verified):
             raise serializers.ValidationError("Email does not exists")
+        
+        return attrs
+     
+
+class ResetPasswordSerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=6,required=True)
+    email = serializers.EmailField(required=True)
+
+    password = serializers.CharField(max_length=128,required=True)
+    reenter_password = serializers.CharField(max_length=128, required=True)
+
+    def validate(self, attrs):
+        otp = attrs.get('otp')
+        email = attrs.get('email')
+        if attrs.get('password') != attrs.get('reenter_password'):
+            raise serializers.ValidationError("Password didn't match")
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User does not exists")
+        
+        if not Otp.objects.filter(user=user, otp=otp).exists():
+            raise serializers.ValidationError("OTP didn't match")
         
         return attrs
 

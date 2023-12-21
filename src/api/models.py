@@ -57,13 +57,13 @@ class Avatar(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now = True)
 
-    def __str__(self):
+    def __str__(self): 
         return self.streamger.user.first_name
     
 class Otp(models.Model):
     otp = models.CharField(max_length=6, null=True, blank=True)
     user = models.OneToOneField(Users,on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now=True)
     # once validate set this to false so that this otp cant be used again. if is active true then only validate otp initially
     is_active = models.BooleanField(default=True)
 
