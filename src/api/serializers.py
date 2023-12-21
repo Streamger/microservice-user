@@ -87,6 +87,18 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("OTP didn't match")
         
         return attrs
+    
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(max_length=128)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("User not found")
+        
+        return attrs
 
 
    

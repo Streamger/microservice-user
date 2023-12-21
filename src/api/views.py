@@ -1,9 +1,12 @@
 from django.shortcuts import render
 from rest_framework.views import Response,APIView
 from rest_framework.permissions import AllowAny
-# from rest_framework import serializers
+
+from django.contrib.auth import authenticate,login
+
 from api import serializers
 from .models import Users,Otp
+
 
 from datetime import datetime,timedelta
 from django.utils import timezone
@@ -15,12 +18,44 @@ from .save_utils import Register_Users
 
 # Create your views here.
 
+
+class Login(APIView):
+    permission_classes = [AllowAny]
+    login_serializer = serializers.LoginSerializer
+
+    def post(self,request):
+        try:
+            login_data = self.login_serializer(data=request.data)
+            login_data.is_valid(raise_exception=True)
+            data = login_data.validated_data
+
+            #Authenticate is a function inside which we will enter email and password after checking it will return an object of user if the usernama and password is correct
+            user = authenticate(request,email=data.get('email'),password = data.get('password'))
+            print(user)
+
+            if user is not None:
+                
+                print(user)
+
+                if not user.is_verified:
+                    #login matains a session so the next time when you come to login, it will automatically recognize you
+                    login(request,user)
+                    raise Exception ("User is not verfied")
+      
+
+            else:
+                raise Exception("Incorrect credentials")
+
+
+            return Response({"success":True})
+        except Exception as e:
+            return Response({"error":str(e)})
+
+
 class Register(APIView):
 
     permission_classes= [AllowAny]
     registration_serializer = serializers.RegistrationSerializer
-
-
 
     def post(self,request,type):
         try:
