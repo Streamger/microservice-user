@@ -2,10 +2,12 @@ from django.shortcuts import render
 from rest_framework.views import Response,APIView
 from rest_framework.permissions import AllowAny
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
 from django.contrib.auth import authenticate,login
 
 from api import serializers
-from .models import Users,Otp
+from .models import Users,Otp,Streamger
 
 
 from datetime import datetime,timedelta
@@ -31,23 +33,36 @@ class Login(APIView):
 
             #Authenticate is a function inside which we will enter email and password after checking it will return an object of user if the usernama and password is correct
             user = authenticate(request,email=data.get('email'),password = data.get('password'))
-            print(user)
 
-            if user is not None:
-                
-                print(user)
+            if user is None:
+                raise Exception("Incorrect credential")
+            
+            if not user.is_verified:
+                raise Exception("User is not verified")
+            
+            user_detail = {
+                "First_Name":user.first_name,
+                "last_name": user.last_name,
+                "email":user.email,
+                "age":user.streamger.age if Streamger.objects.filter(user=user).exists() else "",
+                "gender":user.streamger.gender if Streamger.objects.filter(user=user).exists() else ""
 
-                if not user.is_verified:
-                    #login matains a session so the next time when you come to login, it will automatically recognize you
-                    login(request,user)
-                    raise Exception ("User is not verfied")
-      
-
-            else:
-                raise Exception("Incorrect credentials")
+            }
+            
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
 
 
-            return Response({"success":True})
+            return Response ({
+                "success":True,
+                "data":user_detail,
+                "token":{
+                    "access":access_token,
+                    "refresh":refresh_token
+                }
+            })
+
         except Exception as e:
             return Response({"error":str(e)})
 
