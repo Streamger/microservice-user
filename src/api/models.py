@@ -25,7 +25,7 @@ class Users (AbstractUser,AbstractBaseUser):
     REQUIRED_FIELDS = ['password']
 
     objects = StreamgerManager()  #We can use this like new_user = User.objects.create_user(email='example@example.com', password='password123')
-
+ 
     def __str__(self):
         return self.email
     
@@ -39,6 +39,11 @@ class Streamger (models.Model):
         ('O','Other')
     ]
     gender = models.CharField(max_length=1,choices=GENDER_CHOICES)
+
+
+class Guideapp (models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)
+    
   
     
     

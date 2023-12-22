@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate,login
 
 from api import serializers
-from .models import Users,Otp,Streamger
+from .models import Users,Otp,Streamger,Guideapp
 
 
 from datetime import datetime,timedelta
@@ -44,15 +44,24 @@ class Login(APIView):
                 "First_Name":user.first_name,
                 "last_name": user.last_name,
                 "email":user.email,
-                "age":user.streamger.age if Streamger.objects.filter(user=user).exists() else "",
-                "gender":user.streamger.gender if Streamger.objects.filter(user=user).exists() else ""
-
             }
             
+
+            payload = {
+                "user":"streamger" if hasattr(Streamger,'objects') and Streamger.objects.filter(user_id=user.id).exists()
+                        else "guide" if hasattr(Guideapp,'objects') and Guideapp.objects.filter(user_id=user.id).exists()
+                        else None
+            }
+
+
             refresh = RefreshToken.for_user(user)
+            refresh.payload.update(payload)
+
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
 
+            # access_token.payload.update(payload)
+            # refresh_token.payload.update(payload)
 
             return Response ({
                 "success":True,
@@ -79,7 +88,7 @@ class Register(APIView):
             data = regisration_data.validated_data
 
             #Check whether user is already saved in Users model or not.
-            if not Users.objects.filter(email=data.get('email')).exists():
+            if not (Users.objects.filter(email=data.get('email')).exists()):
                 user_instance = Users.objects.create_user(
                     email=data.get('email'),
                     password = data.get('password'),
@@ -87,6 +96,10 @@ class Register(APIView):
                     last_name = data.get('last_name'),
                     middle_name = data.get('middle_name','')
                     )
+                
+            elif Users.objects.get(email=data.get('email')).is_verified:
+                raise Exception ("User already exist")
+
             else:
                 user_instance=Users.objects.get(email=data.get('email'))
             

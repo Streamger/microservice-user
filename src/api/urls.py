@@ -17,9 +17,8 @@ urlpatterns = [
 
     # path('token/',TokenObtainPairView.as_view(), name="token_obtain_pair"),
 
-    
+
 
     # When an access token expires, the client can use the refresh token to obtain a new access token without needing to re-authenticate the user.
-
     path('refresh/',TokenRefreshView.as_view(),name="token_refresh_views")
 ]

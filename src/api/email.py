@@ -15,6 +15,8 @@ def send_email(email,subject):
 
         send_mail(subject,message,from_email,to_email)
 
+        print("here")
+
         otp_instance = Otp.objects.get(user__email=email)
         otp_instance.otp = otp
         otp_instance.save()  #Updates the otp of certain user if the otp is already assigned to user
