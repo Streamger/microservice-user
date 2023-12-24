@@ -12,8 +12,8 @@ class RegistrationSerializer(serializers.Serializer):
     last_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
     gender = serializers.CharField(required=False)
-    age = serializers.CharField(required=False)
-
+    dob = serializers.DateField(required=True)
+ 
     password = serializers.CharField(required=True)
     reenter_password = serializers.CharField(required=True)
 
@@ -59,10 +59,25 @@ class ForgetPasswordRequestSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs.get('email')
 
-        if not (User.objects.filter(email=email).exists() and User.objects.get(email=email).is_verified):
+        if not User.objects.filter(email=email).exists():
             raise serializers.ValidationError("Email does not exists")
         
         return attrs
+    
+class SendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate(self,attrs):
+        email = attrs.get('email')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("Email does not exists")
+        
+        # if User.objects.filter(email=email).exists() and User.objects.get(email=email).is_verified:
+        #     raise serializers.ValidationError("User is already verifeid")
+        
+        return attrs
+
      
 
 class ResetPasswordSerializer(serializers.Serializer):

@@ -8,7 +8,7 @@ from django.http import Http404
 
 def Register_Users(data, type, user_instance):
 
-    user_type = {
+    user_types = {
         'streamger':Streamger,
         'guide':Guideapp
     }
@@ -26,23 +26,29 @@ def Register_Users(data, type, user_instance):
 
         #         streamger_instance.save()
 
-        user_type_instance = user_type.get(type)
+        user_type_instance = user_types.get(type)
         if not user_type_instance:
             raise Http404("Not Found")
         
-        print('here',user_type_instance)
+
+      
         if not user_type_instance.objects.filter(user=user_instance).exists():
-            user_type_instance = user_type_instance.objects.create(
+    
+
+
+            user_type = user_type_instance(
                 user = user_instance
             )
-            if type == "streamger":
-                user_type_instance.age = data.get('age')
-                user_type_instance.gender = data.get('gender')
-
-            user_type_instance.save()
-
-
         
+
+            if type == "streamger":
+  
+                user_type.dob = data.get('dob')
+                user_type.gender = data.get('gender')
+
+            user_type.save()
+
+
 
 
     except Exception as e:

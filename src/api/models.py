@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,AbstractUser
 from .managers import StreamgerManager
+from datetime import timedelta
 
 
 # Create your models here.
@@ -32,7 +33,7 @@ class Users (AbstractUser,AbstractBaseUser):
 
 class Streamger (models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)   #In this model user will be primary key instead of id
-    age = models.PositiveIntegerField()
+    dob = models.DateField()
     GENDER_CHOICES = [
         ('M','Male'),
         ('F','Female'),
@@ -67,10 +68,16 @@ class Avatar(models.Model):
     
 class Otp(models.Model):
     otp = models.CharField(max_length=6, null=True, blank=True)
+
     user = models.OneToOneField(Users,on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+
+
+    type = models.CharField(max_length=255)
     # once validate set this to false so that this otp cant be used again. if is active true then only validate otp initially
     is_active = models.BooleanField(default=True)
+
 
     def __str__(self):
         return self.otp

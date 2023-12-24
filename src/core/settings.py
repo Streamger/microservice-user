@@ -118,6 +118,10 @@ REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+
+        #defines the default authentication mechanism to token authentcation for all API views.
+        'rest_framework.authentication.TokenAuthentication'
     )
 
 }
