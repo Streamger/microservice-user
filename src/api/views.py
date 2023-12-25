@@ -52,7 +52,8 @@ class Login(APIView):
             payload = {
                 "user":"streamger" if hasattr(Streamger,'objects') and Streamger.objects.filter(user_id=user.id).exists()
                         else "guide" if hasattr(Guideapp,'objects') and Guideapp.objects.filter(user_id=user.id).exists()
-                        else None
+                        else None,
+
             }
 
 
@@ -257,7 +258,7 @@ class GetUserType(APIView):
   
             access_token = AccessToken(str(request.auth))
     
-            return Response({"success":True,"user":access_token.payload.get('user')})
+            return Response({"success":True,"user":access_token.payload.get('user'),"user_id":access_token.payload.get('user_id')})
         except Exception as e:
             return Response({"error":str(e)})
 
