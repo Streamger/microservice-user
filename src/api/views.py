@@ -88,6 +88,8 @@ class Register(APIView):
             regisration_data.is_valid(raise_exception=True)
             data = regisration_data.validated_data
 
+            print(data)
+
             #Check whether user is already saved in Users model or not.
             if not (Users.objects.filter(email=data.get('email')).exists()):
                 user_instance = Users.objects.create_user(

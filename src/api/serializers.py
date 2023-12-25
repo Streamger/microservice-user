@@ -11,7 +11,7 @@ class RegistrationSerializer(serializers.Serializer):
     middle_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=True)
     email = serializers.EmailField(required=True)
-    gender = serializers.CharField(required=False)
+    gender = serializers.CharField(required=True, max_length=1)
     dob = serializers.DateField(required=True)
  
     password = serializers.CharField(required=True)
