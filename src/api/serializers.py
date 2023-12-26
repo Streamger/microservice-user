@@ -42,13 +42,13 @@ class VerifyOTPSerializer(serializers.Serializer):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError("User not found")
+            raise Exception("User not found")
         
         if not user.check_password(password):
-            raise serializers.ValidationError("Password didn't match")
+            raise Exception("Password didn't match")
         
         if not Otp.objects.filter(user=user,otp=otp).exists():
-            raise serializers.ValidationError("OTP didn't match")
+            raise Exception("OTP didn't match")
         
         return attrs
     
@@ -60,7 +60,7 @@ class ForgetPasswordRequestSerializer(serializers.Serializer):
         email = attrs.get('email')
 
         if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("Email does not exists")
+            raise Exception("Email does not exists")
         
         return attrs
     
@@ -71,7 +71,7 @@ class SendOTPSerializer(serializers.Serializer):
         email = attrs.get('email')
 
         if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("Email does not exists")
+            raise Exception("Email does not exists")
         
         # if User.objects.filter(email=email).exists() and User.objects.get(email=email).is_verified:
         #     raise serializers.ValidationError("User is already verifeid")
@@ -91,15 +91,15 @@ class ResetPasswordSerializer(serializers.Serializer):
         otp = attrs.get('otp')
         email = attrs.get('email')
         if attrs.get('password') != attrs.get('reenter_password'):
-            raise serializers.ValidationError("Password didn't match")
+            raise Exception("Password didn't match")
         
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError("User does not exists")
+            raise Exception("User does not exists")
         
         if not Otp.objects.filter(user=user, otp=otp).exists():
-            raise serializers.ValidationError("OTP didn't match")
+            raise Exception("OTP didn't match")
         
         return attrs
     
@@ -111,7 +111,7 @@ class LoginSerializer(serializers.Serializer):
         email = attrs.get('email')
 
         if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("User not found")
+            raise Exception("User not found")
         
         return attrs
 

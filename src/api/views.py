@@ -46,6 +46,8 @@ class Login(APIView):
                 "First_Name":user.first_name,
                 "last_name": user.last_name,
                 "email":user.email,
+                "dob":Streamger.objects.get(user=user).dob if Streamger.objects.filter(user=user).exists() else "",
+                "gender":Streamger.objects.get(user=user).gender if Streamger.objects.filter(user=user).exists() else ""
             }
             
 
@@ -74,7 +76,7 @@ class Login(APIView):
             })
 
         except Exception as e:
-            return Response({"error":str(e)})
+            return Response({"success":False,"message":str(e)})
 
 
 class Register(APIView):
@@ -115,11 +117,11 @@ class Register(APIView):
 
 
       
-            return Response({"success":True})
+            return Response({"success":True,"data":"User Created Successfully"})
 
         
         except Exception as e:
-            return Response({"error":str(e)})
+            return Response({"success":False,"message":str(e)})
         
 
     
@@ -155,9 +157,9 @@ class VerifyUser(APIView):
 
 
 
-            return Response({"success":True,"message":"User created successfully"})
+            return Response({"success":True,"data":"User verified successfully"})
         except Exception as e:
-            return Response ({"error":str(e)})
+            return Response ({"success":False,"message":str(e)})
         
 
 class ForgetPassword(APIView):
@@ -176,9 +178,9 @@ class ForgetPassword(APIView):
             print("yeta")
             send_email(data.get('email'),otp,"Password Reset OTP")
 
-            return Response({"success":True})
+            return Response({"success":True,"message":"Otps sent for forget password"})
         except Exception as e:
-            return Response ({"error":str(e)})
+            return Response ({"success":False,"message":str(e)})
         
 class ReSendOTP(APIView):
     permission_classes = [AllowAny]
@@ -205,9 +207,9 @@ class ReSendOTP(APIView):
 
             send_email(data.get('email'),otp,"Resend Email")
 
-            return Response({"success":True})
+            return Response({"success":True,"data":"Otps resended"})
         except Exception as e:
-            return Response({"error":str(e)})
+            return Response({"success":False,"message":str(e)})
 
 
 
@@ -243,9 +245,9 @@ class ResetPassword(APIView):
             user_instance.save()
 
             print(data)
-            return Response({"success":True})
+            return Response({"success":True,"message":"Password resetted"})
         except Exception as e:
-            return Response ({"error":str(e)})
+            return Response ({"success":False,"message":str(e)})
         
 
 
@@ -262,7 +264,7 @@ class GetUserType(APIView):
     
             return Response({"success":True,"user":access_token.payload.get('user'),"user_id":access_token.payload.get('user_id')})
         except Exception as e:
-            return Response({"error":str(e)})
+            return Response({"success":False,"message":str(e)})
 
 
 
