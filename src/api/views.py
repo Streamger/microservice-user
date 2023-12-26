@@ -46,8 +46,8 @@ class Login(APIView):
                 "First_Name":user.first_name,
                 "last_name": user.last_name,
                 "email":user.email,
-                "dob":user.dob,
-                "gender":user.gender
+                "dob":Streamger.objects.get(user=user).dob if Streamger.objects.filter(user=user).exists() else "",
+                "gender":Streamger.objects.get(user=user).gender if Streamger.objects.filter(user=user).exists() else ""
             }
             
 
@@ -76,7 +76,7 @@ class Login(APIView):
             })
 
         except Exception as e:
-            return Response({"success":False,"error":str(e)})
+            return Response({"success":False,"message":str(e)})
 
 
 class Register(APIView):
@@ -207,7 +207,7 @@ class ReSendOTP(APIView):
 
             send_email(data.get('email'),otp,"Resend Email")
 
-            return Response({"success":True,"message":"Otps resend"})
+            return Response({"success":True,"data":"Otps resended"})
         except Exception as e:
             return Response({"success":False,"message":str(e)})
 
