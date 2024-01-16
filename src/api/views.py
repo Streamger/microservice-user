@@ -2,12 +2,20 @@ from django.shortcuts import render
 from rest_framework.views import Response,APIView
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+from rest_framework import serializers
+
+from urllib.parse import urlencode
 
 from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from django.contrib.auth import authenticate,login
+from django.conf import settings
+from django.shortcuts import redirect
 
 from api import serializers
+from api.serializers import UserSerializer
+
 from .models import Users,Otp,Streamger,Guideapp
 
 
@@ -19,13 +27,16 @@ from .email import send_email
 from .save_utils import Register_Users
 from .generate_otp import get_otp
 
+from .authentication.mixins import ApiErrorsMixin, PublicApiMixin
+from .authentication.utils import google_get_access_token, google_get_user_info, generate_tokens_for_user
 
 # Create your views here.
 
 
-class Login(APIView):
+class Login(APIView, ApiErrorsMixin, PublicApiMixin):
     permission_classes = [AllowAny]
     login_serializer = serializers.LoginSerializer
+    input_serializer = serializers.InputSerializer
 
     def post(self,request):
         try:
@@ -78,6 +89,71 @@ class Login(APIView):
         except Exception as e:
             return Response({"success":False,"message":str(e)})
 
+    def get(self,request):
+
+        type = request.query_params.get('type')
+
+        input_serializer = self.input_serializer(data=request.GET)
+        input_serializer.is_valid(raise_exception=True)
+
+        validated_data = input_serializer.validated_data
+        code = validated_data.get('code')
+        error = validated_data.get('error')
+
+        login_url = f'{settings.BASE_FRONTEND_URL}/login'
+    
+        if error or not code:
+            params = urlencode({'error': error})
+            return redirect(f'{login_url}?{params}')
+
+        redirect_uri = f'{settings.BASE_FRONTEND_URL}/google/'
+        access_token = google_get_access_token(code=code, 
+                                               redirect_uri=redirect_uri)
+
+        user_data = google_get_user_info(access_token=access_token)
+        
+
+        try:
+            user_instance = Users.objects.get(email=user_data['email'])
+            access_token, refresh_token = generate_tokens_for_user(user_instance)
+            response_data = {
+                'user': UserSerializer(user_instance).data,
+                'access_token': str(access_token),
+                'refresh_token': str(refresh_token)
+            }
+            return Response(response_data)
+        
+        except Users.DoesNotExist:
+            username = user_data['email'].split('@')[0]
+            first_name = user_data.get('given_name', '')
+            last_name = user_data.get('family_name', '')
+
+            print("user_data_is",user_data, f'types is {request.query_params}')
+
+            user_instance = Users.objects.create(
+                # username=username,
+                email=user_data['email'],
+                first_name=first_name,
+                last_name=last_name,
+                registration_method='google',
+            )
+
+            data = {
+                'gender':"m",
+                "dob":"2001-09-20"
+            }
+
+            Register_Users(data,type,user_instance)
+
+            access_token, refresh_token = generate_tokens_for_user(user_instance)
+            response_data = {
+                'user': UserSerializer(user_instance).data,
+                'access': str(access_token),
+                'refresh': str(refresh_token)
+            }
+            return Response(response_data)
+
+
 
 class Register(APIView):
 
@@ -123,7 +199,6 @@ class Register(APIView):
         except Exception as e:
             return Response({"success":False,"message":str(e)})
         
-
     
 class VerifyUser(APIView):
     permission_classes = [AllowAny]

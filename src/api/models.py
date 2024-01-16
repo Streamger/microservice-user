@@ -6,7 +6,7 @@ from datetime import timedelta
 
 # Create your models here.
 class Users (AbstractUser,AbstractBaseUser):
-
+ 
     username=None
     is_superuser=None
     date_joined=None
@@ -21,6 +21,16 @@ class Users (AbstractUser,AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+
+    REGISTRATION_CHOICES = [
+        ('email', 'Email'),
+        ('google', 'Google'),
+    ]
+    registration_method = models.CharField(
+        max_length=10,
+        choices=REGISTRATION_CHOICES,
+        default='email'
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['password']

@@ -2,14 +2,18 @@ from django.contrib.auth.models import BaseUserManager
 
 class StreamgerManager(BaseUserManager): #BaseUserManager is a Django-provided base class that serves as a foundation for creating custom manager classes for user models
     use_in_migrations = True
-
-    def create_user(self,email,password,**extra_fields):
+ 
+    def create_user(self,email,password,registration_method,**extra_fields):
         if not email:
             raise ValueError("The email must be set")
 
         email = self.normalize_email(email)
         user = self.model(email=email,**extra_fields)  #Similar to Model.object.create()
-        user.set_password(password)                    #used to securely set a user's password
+
+        if registration_method == "email":
+            user.set_password(password)                    #used to securely set a user's password
+        if registration_method == "google":
+            pass
         user.save(using=self.db)
 
         return user

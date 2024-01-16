@@ -6,6 +6,17 @@ from django.contrib.auth import get_user_model    #Return the currently active u
 User=get_user_model()
 
 
+class UserSerializer(serializers.ModelSerializer): 
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+
+
+class InputSerializer(serializers.Serializer):
+       code = serializers.CharField(required=False)
+       error = serializers.CharField(required=False)
+
+
 class RegistrationSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=True)
     middle_name = serializers.CharField(required=False)
