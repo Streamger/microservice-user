@@ -55,8 +55,28 @@ class Streamger (models.Model):
 class Guideapp (models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)
     
-  
+
+class Language (models.Model):
+    name = models.CharField(max_length = 255)
+
+    def __str__(self):
+        return self.name
+
+
+class OTT (models.Model):
+    name = models.CharField(max_length = 255)
+
+    def __str__(self):
+        return self.name
     
+
+class UserPreference (models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+    language = models.ManyToManyField(Language, related_name='user_preferences')
+    ott = models.ManyToManyField(OTT, related_name='user_prefences')
+
+    def __str__(self):
+        return f'User prefences for {self.user.first_name}'    
     
 class Wishlist(models.Model):
     content_id = models.PositiveBigIntegerField()

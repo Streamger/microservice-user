@@ -3,6 +3,7 @@ from typing import Dict, Any
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from api.models import Streamger,Guideapp
 
 
 GOOGLE_ID_TOKEN_INFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
@@ -17,6 +18,16 @@ def generate_tokens_for_user(user):
     """
     serializer = TokenObtainPairSerializer()
     token_data = serializer.get_token(user)
+
+    payload = {
+        "user":"streamger" if hasattr(Streamger,'objects') and Streamger.objects.filter(user_id=user.id).exists()
+                else "guide" if hasattr(Guideapp,'objects') and Guideapp.objects.filter(user_id=user.id).exists()
+                else None,
+        "name":f'{user.first_name} {user.last_name}'
+    }
+
+    token_data.payload.update(payload)
+
     access_token = token_data.access_token
     refresh_token = token_data
     return access_token, refresh_token
@@ -27,19 +38,19 @@ def google_get_access_token(*, code: str, redirect_uri: str) -> str:
         'code': code,
         'client_id': '786021125517-pd9bg2qvchrj586cs4p7n903iobdobo3.apps.googleusercontent.com',
         'client_secret': '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',
-        'redirect_uri':'http://localhost:3000/google',
+        'redirect_uri':'http://192.168.1.68:3000/api/auth/callback/google',
         'grant_type': 'authorization_code'
     }
 
     response = requests.post('https://oauth2.googleapis.com/token', data=data)
 
 
-    print("before",response.status_code, response.json(), f'code = {code}')
+    # print("before",response.status_code, response.json(), f'code = {code}')
 
     if not response.ok:
         raise ValidationError('Failed to obtain access token from Google.')
     
-    print("after",response.status_code,f'code = {code}')
+    # print("after",response.status_code,f'code = {code}')
 
     access_token = response.json()['access_token']
    

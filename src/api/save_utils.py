@@ -51,7 +51,7 @@ def Register_Users(data, type, user_instance):
 
             user_type.save()
 
-
+ 
 
 
     except Exception as e:

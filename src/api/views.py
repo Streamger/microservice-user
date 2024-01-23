@@ -17,6 +17,7 @@ from api import serializers
 from api.serializers import UserSerializer
 
 from .models import Users,Otp,Streamger,Guideapp
+from .models import UserPreference, Language,OTT
 
 
 from datetime import datetime,timedelta
@@ -38,7 +39,7 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
     login_serializer = serializers.LoginSerializer
     input_serializer = serializers.InputSerializer
 
-    def post(self,request):
+    def post(self,request): 
         try:
             login_data = self.login_serializer(data=request.data)
             login_data.is_valid(raise_exception=True)
@@ -66,6 +67,7 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
                 "user":"streamger" if hasattr(Streamger,'objects') and Streamger.objects.filter(user_id=user.id).exists()
                         else "guide" if hasattr(Guideapp,'objects') and Guideapp.objects.filter(user_id=user.id).exists()
                         else None,
+                "name": f'{user.first_name} {user.last_name}'
 
             }
 
@@ -92,34 +94,34 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
     def get(self,request):
 
         type = request.query_params.get('type')
+        access_token = request.query_params.get('token')
+        # input_serializer = self.input_serializer(data=request.GET)
+        # input_serializer.is_valid(raise_exception=True)
 
-        input_serializer = self.input_serializer(data=request.GET)
-        input_serializer.is_valid(raise_exception=True)
+        # validated_data = input_serializer.validated_data
+        # code = validated_data.get('code')
+        # error = validated_data.get('error')
 
-        validated_data = input_serializer.validated_data
-        code = validated_data.get('code')
-        error = validated_data.get('error')
-
-        login_url = f'{settings.BASE_FRONTEND_URL}/login'
+        # login_url = f'{settings.BASE_FRONTEND_URL}/login' 
     
-        if error or not code:
-            params = urlencode({'error': error})
-            return redirect(f'{login_url}?{params}')
+        # if error or not code:
+        #     params = urlencode({'error': error})
+        #     return redirect(f'{login_url}?{params}')
 
-        redirect_uri = f'{settings.BASE_FRONTEND_URL}/google/'
-        access_token = google_get_access_token(code=code, 
-                                               redirect_uri=redirect_uri)
+        # redirect_uri = f'{settings.BASE_FRONTEND_URL}/api/auth/callback/google'
+        # access_token = google_get_access_token(code=code, redirect_uri=redirect_uri)
 
         user_data = google_get_user_info(access_token=access_token)
         
 
         try:
             user_instance = Users.objects.get(email=user_data['email'])
+            print(user_data)
             access_token, refresh_token = generate_tokens_for_user(user_instance)
             response_data = {
                 'user': UserSerializer(user_instance).data,
-                'access_token': str(access_token),
-                'refresh_token': str(refresh_token)
+                'access': str(access_token),
+                'refresh': str(refresh_token)
             }
             return Response(response_data)
         
@@ -128,7 +130,7 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
             first_name = user_data.get('given_name', '')
             last_name = user_data.get('family_name', '')
 
-            print("user_data_is",user_data, f'types is {request.query_params}')
+            # print("user_data_is",user_data, f'types is {request.query_params}')
 
             user_instance = Users.objects.create(
                 # username=username,
@@ -166,7 +168,7 @@ class Register(APIView):
             regisration_data.is_valid(raise_exception=True)
             data = regisration_data.validated_data
 
-            print(data)
+            # print(data)
 
             #Check whether user is already saved in Users model or not.
             if not (Users.objects.filter(email=data.get('email')).exists()):
@@ -187,7 +189,7 @@ class Register(APIView):
             Register_Users(data,type,user_instance)
 
             otp = get_otp(data.get('email'),"register")
-            print(otp)
+            # print(otp)
             
             send_email(data.get('email'),otp,"User registration")
 
@@ -250,7 +252,7 @@ class ForgetPassword(APIView):
 
 
             otp = get_otp(data.get('email'),"forgot")
-            print("yeta")
+            # print("yeta")
             send_email(data.get('email'),otp,"Password Reset OTP")
 
             return Response({"success":True,"message":"Otps sent for forget password"})
@@ -306,11 +308,11 @@ class ResetPassword(APIView):
             current_time = timezone.now()
 
             if otp_created_time and (current_time - otp_created_time) > timedelta(minutes=5):
-                print(current_time,otp_created_time)
-                print(current_time - otp_created_time)
+                # print(current_time,otp_created_time)
+                # print(current_time - otp_created_time)
                 raise Exception ("OTP is expired")
 
-            print(otp_instance.type == "forgot" and otp_instance.is_active)
+            # print(otp_instance.type == "forgot" and otp_instance.is_active)
             if not (otp_instance.type == "forgot" and otp_instance.is_active):
                 raise Exception ("Click on Forgot password to reset password")
             otp_instance.is_active=False
@@ -319,7 +321,7 @@ class ResetPassword(APIView):
             user_instance.set_password(data.get('password'))
             user_instance.save()
 
-            print(data)
+            # print(data)
             return Response({"success":True,"message":"Password resetted"})
         except Exception as e:
             return Response ({"success":False,"message":str(e)})
@@ -337,9 +339,90 @@ class GetUserType(APIView):
   
             access_token = AccessToken(str(request.auth))
     
-            return Response({"success":True,"user":access_token.payload.get('user'),"user_id":access_token.payload.get('user_id')})
+            return Response({"success":True,
+                             "user":access_token.payload.get('user'),
+                             "user_id":access_token.payload.get('user_id'),
+                             "user_name":access_token.payload.get('name')
+                             })
         except Exception as e:
             return Response({"success":False,"message":str(e)})
+        
+
+class UserPrefences(APIView):
+    permission_classes = [IsAuthenticated]
+
+    preference_serializer = serializers.UserPreferenceSerializer
+
+    def post(self, request):
+        try:
+            preference_data = self.preference_serializer(data=request.data)
+            preference_data.is_valid(raise_exception=True)
+            data= preference_data.validated_data
+
+            access_token = AccessToken(str(request.auth))
+            user = Users.objects.get(id= access_token.payload.get('user_id'))
+
+            language_name = data.get('language',[])
+            ott_name = data.get('ott',[])
+
+            preferences = UserPreference.objects.create(
+                user=user
+            )
+            preferences.save()
+
+            ListModels = {
+                Language : [str(language).lower() for language in language_name],
+                OTT :[str(ott).lower() for ott in ott_name]
+            }
+
+            for model,lists in ListModels.items():
+                for name in lists:
+                    if not model.objects.filter(name=name.lower()).exists():
+                        new_instance = model.objects.create(name=name.lower())
+                        new_instance.save()
+
+                    model_instance = model.objects.get(name=name)
+
+                    preference_field = model.__name__.lower()
 
 
+                    #prefernce_instance represents the many-to-many manager associated with the <preference_field> field in the UserPreference
+                    # many-to-many manager represents the manager object that provides an interface for interacting with a many-to-many relationship between two models.
+                    preference_instance = getattr(preferences,preference_field)  #preference_field is the field inside UserPreference Model
+
+                    #used to add a related instance to a many-to-many relationship.
+                    # Use the add method of the many-to-many manager to associate the model_instance
+                    # with the preferences instance in the <preference_field> field
+                    preference_instance.add(model_instance)
+
+
+
+            return Response({"sucess":True, "data":{
+                "user_name":f'{user.first_name} {user.last_name}',
+                "language": language_name,
+                "ott":ott_name
+            }})
+        
+
+        except Exception as e:
+            return Response({"success":False,"message":str(e)})
+        
+    def get (self, request):
+        try:
+            access_token = AccessToken(str(request.auth))
+
+            user = Users.objects.get(id = access_token.payload.get('user_id'))
+
+            
+            user_preference_instance = UserPreference.objects.get(user=user) if UserPreference.objects.filter(user=user) else None
+            data = {
+                    "user": f'{user.first_name} {user.last_name}',
+                    "language": [language.name for language in user_preference_instance.language.all()] if user_preference_instance else [],
+                    "ott": [ott.name for ott in user_preference_instance.ott.all()] if user_preference_instance else []
+                    }
+           
+
+            return Response({"sucess":True,"data":data})
+        except Exception as e:
+            return Response({"success":False,"message":str(e)})
 

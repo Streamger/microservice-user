@@ -9,7 +9,7 @@ User=get_user_model()
 class UserSerializer(serializers.ModelSerializer): 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email']
+        fields = ['id','first_name', 'last_name', 'email']
 
 
 class InputSerializer(serializers.Serializer):
@@ -128,3 +128,6 @@ class LoginSerializer(serializers.Serializer):
 
 
    
+class UserPreferenceSerializer(serializers.Serializer):
+    language = serializers.ListField(required=False)
+    ott  = serializers.ListField(required = False)
