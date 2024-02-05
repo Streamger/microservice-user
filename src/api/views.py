@@ -1,8 +1,12 @@
 from django.shortcuts import render
+
+from django.db import transaction
+
 from rest_framework.views import Response,APIView
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework import serializers
+import requests
 
 from urllib.parse import urlencode
 
@@ -121,7 +125,8 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
             response_data = {
                 'user': UserSerializer(user_instance).data,
                 'access': str(access_token),
-                'refresh': str(refresh_token)
+                'refresh': str(refresh_token),
+                'first_time':False
             }
             return Response(response_data)
         
@@ -151,7 +156,8 @@ class Login(APIView, ApiErrorsMixin, PublicApiMixin):
             response_data = {
                 'user': UserSerializer(user_instance).data,
                 'access': str(access_token),
-                'refresh': str(refresh_token)
+                'refresh': str(refresh_token),
+                'first_time':True
             }
             return Response(response_data)
 
@@ -353,59 +359,80 @@ class UserPrefences(APIView):
 
     preference_serializer = serializers.UserPreferenceSerializer
 
-    def post(self, request):
-        try:
-            preference_data = self.preference_serializer(data=request.data)
-            preference_data.is_valid(raise_exception=True)
-            data= preference_data.validated_data
+    # def post(self, request):
+    #     try:
+    #         preference_data = self.preference_serializer(data=request.data)
+    #         preference_data.is_valid(raise_exception=True)
+    #         data= preference_data.validated_data
 
-            access_token = AccessToken(str(request.auth))
-            user = Users.objects.get(id= access_token.payload.get('user_id'))
+    #         access_token = AccessToken(str(request.auth))
+    #         user = Users.objects.get(id= access_token.payload.get('user_id'))
 
-            language_name = data.get('language',[])
-            ott_name = data.get('ott',[])
+    #         language_name = data.get('language',[])
+    #         ott_name = data.get('ott',[])
 
-            preferences = UserPreference.objects.create(
-                user=user
-            )
-            preferences.save()
+    #         ott_response = requests.get('http://127.0.0.1:8000/api/v1/fill_contents/ott/')
+    #         ott_response_data = ott_response.json()['data']
 
-            ListModels = {
-                Language : [str(language).lower() for language in language_name],
-                OTT :[str(ott).lower() for ott in ott_name]
-            }
+    #         language_response = requests.get('http://127.0.0.1:8000/api/v1/fill_contents/audiolanguages/')
+    #         language_response_data = ott_response.json()['data']
 
-            for model,lists in ListModels.items():
-                for name in lists:
-                    if not model.objects.filter(name=name.lower()).exists():
-                        new_instance = model.objects.create(name=name.lower())
-                        new_instance.save()
+    #         #Checks whether all the ott give as user preferences are present in api_ottplatform of Content microservice
+    #         if not all(str(ott_list).lower() in (str(ott['name']).lower() for ott in ott_response_data) for ott_list in ott_name):
+    #             raise Exception ("Ott didn't matched")
+            
+    #         #Checks whether all the Languages give as user preferences are present in api_audiolanguages of Content microservice
+    #         if not all(str(language_list).lower() in (str(language['name']).lower() for language in language_response_data) for language_list in language_name):
+    #             raise Exception ("Language didn't matched")
+            
 
-                    model_instance = model.objects.get(name=name)
-
-                    preference_field = model.__name__.lower()
-
-
-                    #prefernce_instance represents the many-to-many manager associated with the <preference_field> field in the UserPreference
-                    # many-to-many manager represents the manager object that provides an interface for interacting with a many-to-many relationship between two models.
-                    preference_instance = getattr(preferences,preference_field)  #preference_field is the field inside UserPreference Model
-
-                    #used to add a related instance to a many-to-many relationship.
-                    # Use the add method of the many-to-many manager to associate the model_instance
-                    # with the preferences instance in the <preference_field> field
-                    preference_instance.add(model_instance)
+            # if not UserPreference.objects.filter(user=user).exists():
+            #     preferences = UserPreference.objects.create(
+            #         user=user
+            #     ) 
+            #     preferences.save()
+            # else:
+            #      preferences = UserPreference.objects.get(
+            #         user=user
+            #     ) 
 
 
+    #         ListModels = {
+    #             Language : [str(language).lower() for language in language_name],
+    #             OTT :[str(ott).lower() for ott in ott_name]
+    #         }
 
-            return Response({"sucess":True, "data":{
-                "user_name":f'{user.first_name} {user.last_name}',
-                "language": language_name,
-                "ott":ott_name
-            }})
+    #         for model,lists in ListModels.items():
+    #             for name in lists:
+    #                 if not model.objects.filter(name=name.lower()).exists():
+    #                     new_instance = model.objects.create(name=name.lower())
+    #                     new_instance.save()
+
+    #                 model_instance = model.objects.get(name=name)
+
+    #                 preference_field = model.__name__.lower()
+
+
+    #                 #prefernce_instance represents the many-to-many manager associated with the <preference_field> field in the UserPreference
+    #                 # many-to-many manager represents the manager object that provides an interface for interacting with a many-to-many relationship between two models.
+    #                 preference_instance = getattr(preferences,preference_field)  #preference_field is the field inside UserPreference Model
+
+    #                 #used to add a related instance to a many-to-many relationship.
+    #                 # Use the add method of the many-to-many manager to associate the model_instance
+    #                 # with the preferences instance in the <preference_field> field
+    #                 preference_instance.add(model_instance)
+
+
+
+            # return Response({"sucess":True, "data":{
+            #     "user_name":f'{user.first_name} {user.last_name}',
+            #     "language": language_name,
+            #     "ott":ott_name
+            # }})
         
 
-        except Exception as e:
-            return Response({"success":False,"message":str(e)})
+    #     except Exception as e:
+    #         return Response({"success":False,"message":str(e)})
         
     def get (self, request):
         try:
@@ -425,4 +452,83 @@ class UserPrefences(APIView):
             return Response({"sucess":True,"data":data})
         except Exception as e:
             return Response({"success":False,"message":str(e)})
+        
+    
+    def patch (self,request):
+        try:
+            update_preference = self.preference_serializer(data=request.data,partial=True)
+            update_preference.is_valid(raise_exception=True)
+            data= update_preference.validated_data
+
+            access_token = AccessToken(str(request.auth))
+            user = Users.objects.get(id= access_token.payload.get('user_id'))
+
+            
+
+            if not UserPreference.objects.filter(user=user).exists():
+                preference_instance = UserPreference.objects.create(
+                    user=user
+                ) 
+                preference_instance.save()
+            else:
+                 preference_instance = UserPreference.objects.get(
+                    user=user
+                ) 
+
+
+            language_name = data.get('language',[language.name for language in preference_instance.language.all()])
+            ott_name = data.get('ott',[ott.name for ott in preference_instance.ott.all()])
+
+            ott_response = requests.get('http://127.0.0.1:8000/api/v1/fill_contents/ott/')
+            ott_response_data = ott_response.json()['data']
+
+            #Checks whether all the ott give as user preferences are present in api_ottplatform of Content microservice
+            if not all(str(ott_list).lower() in (str(ott['name']).lower() for ott in ott_response_data) for ott_list in ott_name):
+                raise Exception ("Ott didn't matched")
+            
+            ListModels = {
+                Language : [str(language).lower() for language in language_name],
+                OTT :[str(ott).lower() for ott in ott_name]
+            }
+
+            #  transaction.atomic() block ensure that a series of database operations are executed atomically.
+            #  An atomic transaction guarantees that either all of its operations are successfully completed, or none of them are.
+            #  If an error occurs at any point within the transaction, all changes made within that transaction are rolled back to maintain consistency in the database.
+            with transaction.atomic():
+                for model,lists in ListModels.items():
+                        preference_field = model.__name__.lower()
+                        preference_field_many_to_many_manager = getattr(preference_instance,preference_field)
+
+                        # If the user provided preferences for a specific field (e.g., 'ott') and the provided list is empty,
+                        # we clear the existing preferences for that field to represent no selections.
+
+                        # It checks if the field (e.g., 'ott') is present in the data dictionary and its value is an empty list (not data[preference_field]). 
+                        # If so, it clears the corresponding many-to-many relationship using preference_field_many_to_many_manager.clear(). 
+                        if preference_field in data and not data[preference_field]:
+                            preference_field_many_to_many_manager.clear()
+
+                        else:
+
+                            for name in lists:
+                                if not model.objects.filter(name=name).exists():
+                                    model_instance = model.objects.create(name=name)
+                                    model_instance.save()
+
+                                model_instance = model.objects.get(name=name)
+
+                                instance = model.objects.filter(name__in=lists)
+
+                                preference_field_many_to_many_manager.set(instance)
+                                
+            return Response({"sucess":True, "data":{
+                "user_name":f'{user.first_name} {user.last_name}',
+                "language": language_name,
+                "ott":ott_name
+            }})
+        
+
+
+            return Response ({"success":True})
+        except Exception as e:
+            return Response ({"success":False,"message":str(e)})
 
