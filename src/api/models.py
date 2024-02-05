@@ -6,7 +6,7 @@ from datetime import timedelta
 
 # Create your models here.
 class Users (AbstractUser,AbstractBaseUser):
-
+ 
     username=None
     is_superuser=None
     date_joined=None
@@ -21,6 +21,16 @@ class Users (AbstractUser,AbstractBaseUser):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+
+    REGISTRATION_CHOICES = [
+        ('email', 'Email'),
+        ('google', 'Google'),
+    ]
+    registration_method = models.CharField(
+        max_length=10,
+        choices=REGISTRATION_CHOICES,
+        default='email'
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['password']
@@ -45,8 +55,28 @@ class Streamger (models.Model):
 class Guideapp (models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)
     
-  
+
+class Language (models.Model):
+    name = models.CharField(max_length = 255)
+
+    def __str__(self):
+        return self.name
+
+
+class OTT (models.Model):
+    name = models.CharField(max_length = 255)
+
+    def __str__(self):
+        return self.name
     
+
+class UserPreference (models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+    language = models.ManyToManyField(Language, related_name='user_preferences')
+    ott = models.ManyToManyField(OTT, related_name='user_prefences')
+
+    def __str__(self):
+        return f'User prefences for {self.user.first_name}'    
     
 class Wishlist(models.Model):
     content_id = models.PositiveBigIntegerField()

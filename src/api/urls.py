@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import Register,VerifyUser,ForgetPassword,ResetPassword,Login,GetUserType,ReSendOTP
+from .views import Register,VerifyUser,ForgetPassword,ResetPassword,Login,GetUserType,ReSendOTP,UserPrefences
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView
@@ -23,5 +23,7 @@ urlpatterns = [
     # When an access token expires, the client can use the refresh token to obtain a new access token without needing to re-authenticate the user.
     path('refresh/',TokenRefreshView.as_view(),name="token_refresh_views"),
 
-    path('usertype/',GetUserType.as_view(),name='get user type')
+    path('usertype/',GetUserType.as_view(),name='get user type'),
+
+    path('preference/', UserPrefences.as_view(), name='user_preference')
 ]

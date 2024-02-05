@@ -26,6 +26,9 @@ def Register_Users(data, type, user_instance):
 
         #         streamger_instance.save()
 
+        print("Inside save utiles")
+        print(data,type,user_instance)
+
         user_type_instance = user_types.get(type)
         if not user_type_instance:
             raise Http404("Not Found")
@@ -43,14 +46,13 @@ def Register_Users(data, type, user_instance):
 
             if type == "streamger":
   
-                user_type.dob = data.get('dob')
+                user_type.dob = data.get('dob','')
                 user_type.gender = data.get('gender')
 
             user_type.save()
 
-
+ 
 
 
     except Exception as e:
-     
         raise Exception (str(e))
