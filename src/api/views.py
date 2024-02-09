@@ -183,7 +183,8 @@ class Register(APIView):
                     password = data.get('password'),
                     first_name = data.get('first_name'),
                     last_name = data.get('last_name'),
-                    middle_name = data.get('middle_name','')
+                    middle_name = data.get('middle_name',''),
+                    registration_method='email'
                     )
                 
             elif Users.objects.filter(email=data.get('email')).exists():
@@ -271,6 +272,10 @@ class ReSendOTP(APIView):
 
     def post(self,request,type):
         try:
+
+            if not type in ["forgot","register"]:
+                raise Exception ("Invalid type. Type most be either forgot or register")
+
             send_otp_data = self.send_otp_serializer(data=request.data)
             send_otp_data.is_valid(raise_exception=True)
             data = send_otp_data.validated_data
@@ -526,9 +531,6 @@ class UserPrefences(APIView):
                 "ott":ott_name
             }})
         
-
-
-            return Response ({"success":True})
         except Exception as e:
             return Response ({"success":False,"message":str(e)})
 
